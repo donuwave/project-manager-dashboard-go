@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NewRouter(userH *UserHandler, projectH *ProjectHandler) http.Handler {
+func NewRouter(userH *UserHandler, projectH *ProjectHandler, taskH *TaskHandler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID, middleware.RealIP, middleware.Logger, middleware.Recoverer)
 
@@ -18,6 +18,9 @@ func NewRouter(userH *UserHandler, projectH *ProjectHandler) http.Handler {
 	r.Post("/projects", projectH.CreateProject)
 	r.Get("/projects/{id}", projectH.GetProject)
 	r.Post("/projects/{id}/invite", projectH.Invite)
+
+	r.Get("/projects/{id}/tasks", taskH.ListByProject)
+	r.Post("/projects/{id}/tasks", taskH.CreateInProject)
 
 	return r
 }

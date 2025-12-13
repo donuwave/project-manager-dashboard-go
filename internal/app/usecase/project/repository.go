@@ -92,12 +92,35 @@ func (r *EntRepo) GetByID(ctx context.Context, id uuid.UUID) (ProjectDTO, error)
 		})
 	}
 
+	projectTasks, err := p.QueryProjectTasks().
+		WithTask().
+		All(ctx)
+	if err != nil {
+		return ProjectDTO{}, err
+	}
+
+	tasks := make([]ProjectTaskDTO, 0, len(projectTasks))
+	for _, pt := range projectTasks {
+		t := pt.Edges.Task
+		if t == nil {
+			continue
+		}
+		tasks = append(tasks, ProjectTaskDTO{
+			ID:          t.ID,
+			Title:       t.Title,
+			Description: t.Description,
+			Status:      string(t.Status),
+			CreatedAt:   t.CreatedAt,
+		})
+	}
+
 	return ProjectDTO{
 		ID:          p.ID,
 		Name:        p.Name,
 		Description: p.Description,
 		CreatedAt:   p.CreatedAt,
 		Members:     members,
+		Tasks:       tasks,
 	}, nil
 }
 

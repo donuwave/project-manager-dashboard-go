@@ -20,6 +20,14 @@ type ProjectMemberDTO struct {
 	Role   string
 }
 
+type ProjectTaskDTO struct {
+	ID          uuid.UUID
+	Title       string
+	Description string
+	Status      string
+	CreatedAt   time.Time
+}
+
 type ProjectDTO struct {
 	ID          uuid.UUID
 	Name        string
@@ -27,6 +35,7 @@ type ProjectDTO struct {
 	CreatedAt   time.Time
 
 	Members []ProjectMemberDTO
+	Tasks   []ProjectTaskDTO
 }
 
 type ProjectRepository interface {

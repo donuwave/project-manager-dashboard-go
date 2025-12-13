@@ -25,6 +25,7 @@ type ProjectResponse struct {
 	Description *string               `json:"description,omitempty"`
 	CreatedAt   time.Time             `json:"createdAt"`
 	Users       []ProjectUserResponse `json:"users"`
+	Tasks       []TaskResponse        `json:"tasks"`
 }
 
 type InviteUserRequest struct {

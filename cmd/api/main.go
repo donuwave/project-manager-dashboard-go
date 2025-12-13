@@ -6,6 +6,7 @@ import (
 	stdhttp "net/http"
 	"os"
 	"project-manager-dashboard-go/internal/app/usecase/project"
+	"project-manager-dashboard-go/internal/app/usecase/task"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -47,7 +48,12 @@ func main() {
 	projectUseCase := project.NewProjectUsecase(projectRepo)
 	projectHandlers := httpapi.NewProjectHandler(projectUseCase)
 
-	r := httpapi.NewRouter(userHandlers, projectHandlers)
+	// Tasks
+	taskRepo := task.NewEntRepo(a.Ent)
+	taskUC := task.NewTasksUseCase(taskRepo)
+	taskHandlers := httpapi.NewTaskHandler(taskUC)
+
+	r := httpapi.NewRouter(userHandlers, projectHandlers, taskHandlers)
 
 	log.Printf("HTTP listening on %s", addr)
 	log.Fatal(stdhttp.ListenAndServe(addr, r))

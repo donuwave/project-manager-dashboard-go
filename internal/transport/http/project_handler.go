@@ -118,12 +118,24 @@ func (h *ProjectHandler) GetProject(w stdhttp.ResponseWriter, r *stdhttp.Request
 		})
 	}
 
+	tasks := make([]dto.TaskResponse, 0, len(p.Tasks))
+	for _, t := range p.Tasks {
+		tasks = append(tasks, dto.TaskResponse{
+			ID:          t.ID,
+			Title:       t.Title,
+			Description: t.Description,
+			Status:      t.Status,
+			CreatedAt:   t.CreatedAt,
+		})
+	}
+
 	writeJSON(w, stdhttp.StatusOK, dto.ProjectResponse{
 		ID:          p.ID,
 		Name:        p.Name,
 		Description: p.Description,
 		CreatedAt:   p.CreatedAt,
 		Users:       users,
+		Tasks:       tasks,
 	})
 }
 
