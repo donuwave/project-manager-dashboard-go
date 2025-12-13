@@ -1,0 +1,163 @@
+package project
+
+import (
+	"context"
+	"entgo.io/ent/dialect/sql"
+	"project-manager-dashboard-go/ent/project"
+	"project-manager-dashboard-go/ent/projectuser"
+	"project-manager-dashboard-go/ent/user"
+
+	"github.com/google/uuid"
+	"project-manager-dashboard-go/ent"
+)
+
+type EntRepo struct {
+	client *ent.Client
+}
+
+func NewEntRepo(c *ent.Client) *EntRepo {
+	return &EntRepo{client: c}
+}
+
+func (r *EntRepo) Create(ctx context.Context, in CreateInput) (ProjectDTO, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return ProjectDTO{}, err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	pc := tx.Project.Create().SetName(in.Name)
+	if in.Description != nil {
+		pc.SetDescription(*in.Description)
+	}
+
+	p, err := pc.Save(ctx)
+	if err != nil {
+		return ProjectDTO{}, err
+	}
+
+	_, err = tx.ProjectUser.
+		Create().
+		SetProjectID(p.ID).
+		SetUserID(in.OwnerID).
+		SetRole("owner").
+		Save(ctx)
+	if err != nil {
+		return ProjectDTO{}, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return ProjectDTO{}, err
+	}
+
+	return ProjectDTO{
+		ID:          p.ID,
+		Name:        p.Name,
+		Description: p.Description,
+		CreatedAt:   p.CreatedAt,
+	}, nil
+}
+
+func (r *EntRepo) GetByID(ctx context.Context, id uuid.UUID) (ProjectDTO, error) {
+	p, err := r.client.Project.Get(ctx, id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return ProjectDTO{}, ErrNotFound
+		}
+		return ProjectDTO{}, err
+	}
+
+	memberships, err := p.QueryMemberships().
+		WithUser().
+		All(ctx)
+	if err != nil {
+		return ProjectDTO{}, err
+	}
+
+	members := make([]ProjectMemberDTO, 0, len(memberships))
+	for _, m := range memberships {
+		u := m.Edges.User
+		if u == nil {
+			continue
+		}
+		members = append(members, ProjectMemberDTO{
+			UserID: u.ID,
+			Name:   u.Name,
+			Email:  u.Email,
+			Role:   string(m.Role),
+		})
+	}
+
+	return ProjectDTO{
+		ID:          p.ID,
+		Name:        p.Name,
+		Description: p.Description,
+		CreatedAt:   p.CreatedAt,
+		Members:     members,
+	}, nil
+}
+
+func (r *EntRepo) List(ctx context.Context, limit, offset int) ([]ProjectDTO, error) {
+	items, err := r.client.Project.
+		Query().
+		Order(project.ByCreatedAt(sql.OrderDesc())).
+		Limit(limit).
+		Offset(offset).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]ProjectDTO, 0, len(items))
+	for _, p := range items {
+		out = append(out, ProjectDTO{
+			ID:          p.ID,
+			Name:        p.Name,
+			Description: p.Description,
+			CreatedAt:   p.CreatedAt,
+		})
+	}
+	return out, nil
+}
+
+func (r *EntRepo) ProjectExists(ctx context.Context, projectID uuid.UUID) (bool, error) {
+	return r.client.Project.
+		Query().
+		Where(project.IDEQ(projectID)).
+		Exist(ctx)
+}
+
+func (r *EntRepo) UserExists(ctx context.Context, userID uuid.UUID) (bool, error) {
+	return r.client.User.
+		Query().
+		Where(user.IDEQ(userID)).
+		Exist(ctx)
+}
+
+func (r *EntRepo) IsMember(ctx context.Context, projectID, userID uuid.UUID) (bool, error) {
+	return r.client.ProjectUser.
+		Query().
+		Where(
+			projectuser.HasProjectWith(project.IDEQ(projectID)),
+			projectuser.HasUserWith(user.IDEQ(userID)),
+		).
+		Exist(ctx)
+}
+
+func (r *EntRepo) AddMember(ctx context.Context, projectID, userID uuid.UUID, role string) error {
+	_, err := r.client.ProjectUser.
+		Create().
+		SetProjectID(projectID).
+		SetUserID(userID).
+		SetRole(projectuser.Role(role)).
+		Save(ctx)
+
+	if err != nil && ent.IsConstraintError(err) {
+		return ErrAlreadyMember
+	}
+	return err
+}
