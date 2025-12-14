@@ -27,6 +27,13 @@ func (uc *UseCase) GetByID(ctx context.Context, id uuid.UUID) (ProjectDTO, error
 	return uc.repo.GetByID(ctx, id)
 }
 
+func (uc *UseCase) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (ProjectDTO, error) {
+	if in.Name != nil && strings.TrimSpace(*in.Name) == "" {
+		return ProjectDTO{}, errors.New("name cannot be empty")
+	}
+	return uc.repo.Update(ctx, id, in)
+}
+
 func (uc *UseCase) List(ctx context.Context, limit, offset int) ([]ProjectDTO, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 50

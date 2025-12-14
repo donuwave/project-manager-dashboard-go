@@ -147,6 +147,36 @@ func (r *EntRepo) List(ctx context.Context, limit, offset int) ([]ProjectDTO, er
 	return out, nil
 }
 
+func (r *EntRepo) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (ProjectDTO, error) {
+	pu := r.client.Project.UpdateOneID(id)
+
+	if in.Name != nil {
+		pu.SetName(*in.Name)
+	}
+	if in.Description != nil {
+		if *in.Description == "" {
+			pu.ClearDescription()
+		} else {
+			pu.SetDescription(*in.Description)
+		}
+	}
+
+	p, err := pu.Save(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return ProjectDTO{}, ErrNotFound
+		}
+		return ProjectDTO{}, err
+	}
+
+	return ProjectDTO{
+		ID:          p.ID,
+		Name:        p.Name,
+		Description: p.Description,
+		CreatedAt:   p.CreatedAt,
+	}, nil
+}
+
 func (r *EntRepo) ProjectExists(ctx context.Context, projectID uuid.UUID) (bool, error) {
 	return r.client.Project.
 		Query().

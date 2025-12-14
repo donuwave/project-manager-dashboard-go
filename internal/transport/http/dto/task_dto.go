@@ -19,3 +19,9 @@ type TaskResponse struct {
 	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"createdAt"`
 }
+
+type UpdateTaskRequest struct {
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Status      *string `json:"status,omitempty"` // "todo" | "in_progress" | "done"
+}

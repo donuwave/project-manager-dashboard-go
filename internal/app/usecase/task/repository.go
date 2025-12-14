@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"project-manager-dashboard-go/ent/task"
 
 	"github.com/google/uuid"
@@ -73,6 +74,40 @@ func (r *EntRepo) CreateInProject(ctx context.Context, projectID uuid.UUID, in C
 	}
 
 	if err := tx.Commit(); err != nil {
+		return TaskDTO{}, err
+	}
+
+	return TaskDTO{
+		ID:          t.ID,
+		Title:       t.Title,
+		Description: t.Description,
+		Status:      string(t.Status),
+		CreatedAt:   t.CreatedAt,
+	}, nil
+}
+
+func (r *EntRepo) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (TaskDTO, error) {
+	u := r.client.Task.UpdateOneID(id)
+
+	if in.Title != nil {
+		u.SetTitle(*in.Title)
+	}
+	if in.Description != nil {
+		if *in.Description == "" {
+			u.ClearDescription()
+		} else {
+			u.SetDescription(*in.Description)
+		}
+	}
+	if in.Status != nil {
+		u.SetStatus(task.Status(*in.Status))
+	}
+
+	t, err := u.Save(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return TaskDTO{}, errors.New("task not found")
+		}
 		return TaskDTO{}, err
 	}
 

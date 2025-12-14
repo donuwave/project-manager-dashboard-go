@@ -89,6 +89,42 @@ func (h *ProjectHandler) CreateProject(w stdhttp.ResponseWriter, r *stdhttp.Requ
 	})
 }
 
+func (h *ProjectHandler) UpdateProject(w stdhttp.ResponseWriter, r *stdhttp.Request) {
+	ctx := r.Context()
+
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid id"})
+		return
+	}
+
+	var req dto.UpdateProjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+
+	updated, err := h.uc.Update(ctx, id, project.UpdateInput{
+		Name:        req.Name,
+		Description: req.Description,
+	})
+	if err != nil {
+		if errors.Is(err, project.ErrNotFound) {
+			writeJSON(w, stdhttp.StatusNotFound, map[string]string{"error": "not found"})
+			return
+		}
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+
+	writeJSON(w, stdhttp.StatusOK, dto.ProjectResponse{
+		ID:          updated.ID,
+		Name:        updated.Name,
+		Description: updated.Description,
+		CreatedAt:   updated.CreatedAt,
+	})
+}
+
 func (h *ProjectHandler) GetProject(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 	ctx := r.Context()
 

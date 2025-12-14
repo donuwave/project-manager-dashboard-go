@@ -22,10 +22,23 @@ func (uc *UseCase) ListByProject(ctx context.Context, projectID uuid.UUID, limit
 	return uc.repo.ListByProject(ctx, projectID, limit, offset)
 }
 
+func (uc *UseCase) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (TaskDTO, error) {
+	if in.Title != nil && strings.TrimSpace(*in.Title) == "" {
+		return TaskDTO{}, errors.New("title cannot be empty")
+	}
+	if in.Status != nil {
+		switch *in.Status {
+		case "todo", "in_progress", "done":
+		default:
+			return TaskDTO{}, errors.New("invalid status")
+		}
+	}
+	return uc.repo.Update(ctx, id, in)
+}
+
 func (uc *UseCase) CreateInProject(ctx context.Context, projectID uuid.UUID, in CreateInput) (TaskDTO, error) {
 	if strings.TrimSpace(in.Title) == "" {
 		return TaskDTO{}, errors.New("title is required")
 	}
-	// status можно валидировать, но можно и пропускать (пусть ent default поставит)
 	return uc.repo.CreateInProject(ctx, projectID, in)
 }

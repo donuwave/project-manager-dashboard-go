@@ -19,6 +19,11 @@ type ProjectUserResponse struct {
 	Role  string    `json:"role"`
 }
 
+type UpdateProjectRequest struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
 type ProjectResponse struct {
 	ID          uuid.UUID             `json:"id"`
 	Name        string                `json:"name"`

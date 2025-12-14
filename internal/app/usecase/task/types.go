@@ -15,13 +15,20 @@ type TaskDTO struct {
 	CreatedAt   time.Time
 }
 
+type UpdateInput struct {
+	Title       *string
+	Description *string
+	Status      *string
+}
+
 type CreateInput struct {
 	Title       string
 	Description *string
-	Status      string // optional: "todo" | "in_progress" | "done"
+	Status      string
 }
 
 type TasksRepository interface {
 	ListByProject(ctx context.Context, projectID uuid.UUID, limit, offset int) ([]TaskDTO, error)
+	Update(ctx context.Context, id uuid.UUID, in UpdateInput) (TaskDTO, error)
 	CreateInProject(ctx context.Context, projectID uuid.UUID, in CreateInput) (TaskDTO, error)
 }

@@ -13,6 +13,11 @@ type CreateInput struct {
 	OwnerID     uuid.UUID
 }
 
+type UpdateInput struct {
+	Name        *string
+	Description *string
+}
+
 type ProjectMemberDTO struct {
 	UserID uuid.UUID
 	Name   string
@@ -42,6 +47,7 @@ type ProjectRepository interface {
 	Create(ctx context.Context, in CreateInput) (ProjectDTO, error)
 	GetByID(ctx context.Context, id uuid.UUID) (ProjectDTO, error)
 	List(ctx context.Context, limit, offset int) ([]ProjectDTO, error)
+	Update(ctx context.Context, id uuid.UUID, in UpdateInput) (ProjectDTO, error)
 	ProjectExists(ctx context.Context, projectID uuid.UUID) (bool, error)
 	UserExists(ctx context.Context, userID uuid.UUID) (bool, error)
 	IsMember(ctx context.Context, projectID, userID uuid.UUID) (bool, error)

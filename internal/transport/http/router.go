@@ -17,8 +17,10 @@ func NewRouter(userH *UserHandler, projectH *ProjectHandler, taskH *TaskHandler)
 	r.Get("/projects", projectH.ListProjects)
 	r.Post("/projects", projectH.CreateProject)
 	r.Get("/projects/{id}", projectH.GetProject)
+	r.Patch("/projects/{id}", projectH.UpdateProject)
 	r.Post("/projects/{id}/invite", projectH.Invite)
 
+	r.Patch("/tasks/{id}", taskH.UpdateTask)
 	r.Get("/projects/{id}/tasks", taskH.ListByProject)
 	r.Post("/projects/{id}/tasks", taskH.CreateInProject)
 

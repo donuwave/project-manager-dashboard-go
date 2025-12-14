@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	stdhttp "net/http"
 	"project-manager-dashboard-go/internal/transport/http/dto"
 	"strconv"
@@ -82,4 +83,36 @@ func (h *TaskHandler) CreateInProject(w stdhttp.ResponseWriter, r *stdhttp.Reque
 		Status:      created.Status,
 		CreatedAt:   created.CreatedAt,
 	})
+}
+
+func (h *TaskHandler) UpdateTask(w stdhttp.ResponseWriter, r *stdhttp.Request) {
+	ctx := r.Context()
+
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid id"})
+		return
+	}
+
+	var req dto.UpdateTaskRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+
+	updated, err := h.uc.Update(ctx, id, task.UpdateInput{
+		Title:       req.Title,
+		Description: req.Description,
+		Status:      req.Status,
+	})
+	if err != nil {
+		if errors.Is(err, errors.New("task not found")) {
+			writeJSON(w, stdhttp.StatusNotFound, map[string]string{"error": "not found"})
+			return
+		}
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+
+	writeJSON(w, stdhttp.StatusOK, updated)
 }
