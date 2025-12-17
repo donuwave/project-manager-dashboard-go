@@ -321,6 +321,29 @@ func CreatedAtLTE(v time.Time) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldCreatedAt, v))
 }
 
+// HasAssignedTasks applies the HasEdge predicate on the "assigned_tasks" edge.
+func HasAssignedTasks() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AssignedTasksTable, AssignedTasksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAssignedTasksWith applies the HasEdge predicate on the "assigned_tasks" edge with a given conditions (other predicates).
+func HasAssignedTasksWith(preds ...predicate.Task) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newAssignedTasksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasMemberships applies the HasEdge predicate on the "memberships" edge.
 func HasMemberships() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -336,29 +359,6 @@ func HasMemberships() predicate.User {
 func HasMembershipsWith(preds ...predicate.ProjectUser) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newMembershipsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasAssignments applies the HasEdge predicate on the "assignments" edge.
-func HasAssignments() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AssignmentsTable, AssignmentsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasAssignmentsWith applies the HasEdge predicate on the "assignments" edge with a given conditions (other predicates).
-func HasAssignmentsWith(preds ...predicate.UserTask) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := newAssignmentsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -9,7 +9,6 @@ import (
 	"project-manager-dashboard-go/ent/schema"
 	"project-manager-dashboard-go/ent/task"
 	"project-manager-dashboard-go/ent/user"
-	"project-manager-dashboard-go/ent/usertask"
 	"time"
 
 	"github.com/google/uuid"
@@ -79,14 +78,4 @@ func init() {
 	userDescID := userFields[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.
 	user.DefaultID = userDescID.Default.(func() uuid.UUID)
-	usertaskFields := schema.UserTask{}.Fields()
-	_ = usertaskFields
-	// usertaskDescCreatedAt is the schema descriptor for created_at field.
-	usertaskDescCreatedAt := usertaskFields[1].Descriptor()
-	// usertask.DefaultCreatedAt holds the default value on creation for the created_at field.
-	usertask.DefaultCreatedAt = usertaskDescCreatedAt.Default.(func() time.Time)
-	// usertaskDescID is the schema descriptor for id field.
-	usertaskDescID := usertaskFields[0].Descriptor()
-	// usertask.DefaultID holds the default value on creation for the id field.
-	usertask.DefaultID = usertaskDescID.Default.(func() uuid.UUID)
 }

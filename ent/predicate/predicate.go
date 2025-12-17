@@ -20,6 +20,3 @@ type Task func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
-
-// UserTask is the predicate function for usertask builders.
-type UserTask func(*sql.Selector)

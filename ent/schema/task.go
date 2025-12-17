@@ -37,12 +37,16 @@ func (Task) Fields() []ent.Field {
 
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
+		field.UUID("assignee_id", uuid.UUID{}).Optional().Nillable(),
 	}
 }
 
 func (Task) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("project_tasks", ProjectTask.Type),
-		edge.To("assignments", UserTask.Type),
+		edge.From("assignee", User.Type).
+			Ref("assigned_tasks").
+			Field("assignee_id").
+			Unique(),
 	}
 }

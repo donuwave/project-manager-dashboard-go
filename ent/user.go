@@ -34,31 +34,31 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
+	// AssignedTasks holds the value of the assigned_tasks edge.
+	AssignedTasks []*Task `json:"assigned_tasks,omitempty"`
 	// Memberships holds the value of the memberships edge.
 	Memberships []*ProjectUser `json:"memberships,omitempty"`
-	// Assignments holds the value of the assignments edge.
-	Assignments []*UserTask `json:"assignments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 }
 
+// AssignedTasksOrErr returns the AssignedTasks value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) AssignedTasksOrErr() ([]*Task, error) {
+	if e.loadedTypes[0] {
+		return e.AssignedTasks, nil
+	}
+	return nil, &NotLoadedError{edge: "assigned_tasks"}
+}
+
 // MembershipsOrErr returns the Memberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) MembershipsOrErr() ([]*ProjectUser, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Memberships, nil
 	}
 	return nil, &NotLoadedError{edge: "memberships"}
-}
-
-// AssignmentsOrErr returns the Assignments value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserEdges) AssignmentsOrErr() ([]*UserTask, error) {
-	if e.loadedTypes[1] {
-		return e.Assignments, nil
-	}
-	return nil, &NotLoadedError{edge: "assignments"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -130,14 +130,14 @@ func (_m *User) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
+// QueryAssignedTasks queries the "assigned_tasks" edge of the User entity.
+func (_m *User) QueryAssignedTasks() *TaskQuery {
+	return NewUserClient(_m.config).QueryAssignedTasks(_m)
+}
+
 // QueryMemberships queries the "memberships" edge of the User entity.
 func (_m *User) QueryMemberships() *ProjectUserQuery {
 	return NewUserClient(_m.config).QueryMemberships(_m)
-}
-
-// QueryAssignments queries the "assignments" edge of the User entity.
-func (_m *User) QueryAssignments() *UserTaskQuery {
-	return NewUserClient(_m.config).QueryAssignments(_m)
 }
 
 // Update returns a builder for updating this User.

@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"project-manager-dashboard-go/ent/task"
+	"project-manager-dashboard-go/ent/user"
 	"strings"
 	"time"
 
@@ -34,6 +35,8 @@ type Task struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// AssigneeID holds the value of the "assignee_id" field.
+	AssigneeID *uuid.UUID `json:"assignee_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
 	Edges        TaskEdges `json:"edges"`
@@ -44,8 +47,8 @@ type Task struct {
 type TaskEdges struct {
 	// ProjectTasks holds the value of the project_tasks edge.
 	ProjectTasks []*ProjectTask `json:"project_tasks,omitempty"`
-	// Assignments holds the value of the assignments edge.
-	Assignments []*UserTask `json:"assignments,omitempty"`
+	// Assignee holds the value of the assignee edge.
+	Assignee *User `json:"assignee,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -60,13 +63,15 @@ func (e TaskEdges) ProjectTasksOrErr() ([]*ProjectTask, error) {
 	return nil, &NotLoadedError{edge: "project_tasks"}
 }
 
-// AssignmentsOrErr returns the Assignments value or an error if the edge
-// was not loaded in eager-loading.
-func (e TaskEdges) AssignmentsOrErr() ([]*UserTask, error) {
-	if e.loadedTypes[1] {
-		return e.Assignments, nil
+// AssigneeOrErr returns the Assignee value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskEdges) AssigneeOrErr() (*User, error) {
+	if e.Assignee != nil {
+		return e.Assignee, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
 	}
-	return nil, &NotLoadedError{edge: "assignments"}
+	return nil, &NotLoadedError{edge: "assignee"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -74,6 +79,8 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case task.FieldAssigneeID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case task.FieldPosition:
 			values[i] = new(sql.NullInt64)
 		case task.FieldTitle, task.FieldDescription, task.FieldStatus, task.FieldPriority:
@@ -151,6 +158,13 @@ func (_m *Task) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case task.FieldAssigneeID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field assignee_id", values[i])
+			} else if value.Valid {
+				_m.AssigneeID = new(uuid.UUID)
+				*_m.AssigneeID = *value.S.(*uuid.UUID)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -169,9 +183,9 @@ func (_m *Task) QueryProjectTasks() *ProjectTaskQuery {
 	return NewTaskClient(_m.config).QueryProjectTasks(_m)
 }
 
-// QueryAssignments queries the "assignments" edge of the Task entity.
-func (_m *Task) QueryAssignments() *UserTaskQuery {
-	return NewTaskClient(_m.config).QueryAssignments(_m)
+// QueryAssignee queries the "assignee" edge of the Task entity.
+func (_m *Task) QueryAssignee() *UserQuery {
+	return NewTaskClient(_m.config).QueryAssignee(_m)
 }
 
 // Update returns a builder for updating this Task.
@@ -220,6 +234,11 @@ func (_m *Task) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	if v := _m.AssigneeID; v != nil {
+		builder.WriteString("assignee_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

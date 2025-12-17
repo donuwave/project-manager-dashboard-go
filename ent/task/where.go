@@ -86,6 +86,11 @@ func UpdatedAt(v time.Time) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// AssigneeID applies equality check predicate on the "assignee_id" field. It's identical to AssigneeIDEQ.
+func AssigneeID(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldAssigneeID, v))
+}
+
 // TitleEQ applies the EQ predicate on the "title" field.
 func TitleEQ(v string) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldTitle, v))
@@ -436,6 +441,36 @@ func UpdatedAtLTE(v time.Time) predicate.Task {
 	return predicate.Task(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
+// AssigneeIDEQ applies the EQ predicate on the "assignee_id" field.
+func AssigneeIDEQ(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldAssigneeID, v))
+}
+
+// AssigneeIDNEQ applies the NEQ predicate on the "assignee_id" field.
+func AssigneeIDNEQ(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldNEQ(FieldAssigneeID, v))
+}
+
+// AssigneeIDIn applies the In predicate on the "assignee_id" field.
+func AssigneeIDIn(vs ...uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldIn(FieldAssigneeID, vs...))
+}
+
+// AssigneeIDNotIn applies the NotIn predicate on the "assignee_id" field.
+func AssigneeIDNotIn(vs ...uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldNotIn(FieldAssigneeID, vs...))
+}
+
+// AssigneeIDIsNil applies the IsNil predicate on the "assignee_id" field.
+func AssigneeIDIsNil() predicate.Task {
+	return predicate.Task(sql.FieldIsNull(FieldAssigneeID))
+}
+
+// AssigneeIDNotNil applies the NotNil predicate on the "assignee_id" field.
+func AssigneeIDNotNil() predicate.Task {
+	return predicate.Task(sql.FieldNotNull(FieldAssigneeID))
+}
+
 // HasProjectTasks applies the HasEdge predicate on the "project_tasks" edge.
 func HasProjectTasks() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
@@ -459,21 +494,21 @@ func HasProjectTasksWith(preds ...predicate.ProjectTask) predicate.Task {
 	})
 }
 
-// HasAssignments applies the HasEdge predicate on the "assignments" edge.
-func HasAssignments() predicate.Task {
+// HasAssignee applies the HasEdge predicate on the "assignee" edge.
+func HasAssignee() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AssignmentsTable, AssignmentsColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, AssigneeTable, AssigneeColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasAssignmentsWith applies the HasEdge predicate on the "assignments" edge with a given conditions (other predicates).
-func HasAssignmentsWith(preds ...predicate.UserTask) predicate.Task {
+// HasAssigneeWith applies the HasEdge predicate on the "assignee" edge with a given conditions (other predicates).
+func HasAssigneeWith(preds ...predicate.User) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
-		step := newAssignmentsStep()
+		step := newAssigneeStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

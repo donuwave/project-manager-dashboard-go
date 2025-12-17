@@ -42,3 +42,57 @@ func (uc *UseCase) CreateInProject(ctx context.Context, projectID uuid.UUID, in 
 	}
 	return uc.repo.CreateInProject(ctx, projectID, in)
 }
+
+func (uc *UseCase) Assign(ctx context.Context, taskID, actorID, userID uuid.UUID) error {
+	projectID, err := uc.repo.GetProjectIDByTask(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if projectID == uuid.Nil {
+		return errors.New("task not found")
+	}
+
+	ok, err := uc.repo.UserExists(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errors.New("user not found")
+	}
+
+	isActorMember, err := uc.repo.IsProjectMember(ctx, projectID, actorID)
+	if err != nil {
+		return err
+	}
+	if !isActorMember {
+		return errors.New("forbidden")
+	}
+
+	isTargetMember, err := uc.repo.IsProjectMember(ctx, projectID, userID)
+	if err != nil {
+		return err
+	}
+	if !isTargetMember {
+		return errors.New("user not in project")
+	}
+
+	if actorID != userID {
+		role, err := uc.repo.GetMemberRole(ctx, projectID, actorID)
+		if err != nil {
+			return err
+		}
+		if role != "owner" {
+			return errors.New("forbidden")
+		}
+	}
+
+	cur, err := uc.repo.GetAssignee(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if cur != nil && cur.UserID == userID {
+		return errors.New("already assigned")
+	}
+
+	return uc.repo.SetAssignee(ctx, taskID, userID)
+}

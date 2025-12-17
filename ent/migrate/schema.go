@@ -101,12 +101,21 @@ var (
 		{Name: "due_date", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "assignee_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// TasksTable holds the schema information for the "tasks" table.
 	TasksTable = &schema.Table{
 		Name:       "tasks",
 		Columns:    TasksColumns,
 		PrimaryKey: []*schema.Column{TasksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tasks_users_assigned_tasks",
+				Columns:    []*schema.Column{TasksColumns[9]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -122,40 +131,6 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
-	// UserTasksColumns holds the columns for the "user_tasks" table.
-	UserTasksColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "task_assignments", Type: field.TypeUUID},
-		{Name: "user_assignments", Type: field.TypeUUID},
-	}
-	// UserTasksTable holds the schema information for the "user_tasks" table.
-	UserTasksTable = &schema.Table{
-		Name:       "user_tasks",
-		Columns:    UserTasksColumns,
-		PrimaryKey: []*schema.Column{UserTasksColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "user_tasks_tasks_assignments",
-				Columns:    []*schema.Column{UserTasksColumns[2]},
-				RefColumns: []*schema.Column{TasksColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-			{
-				Symbol:     "user_tasks_users_assignments",
-				Columns:    []*schema.Column{UserTasksColumns[3]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "usertask_user_assignments_task_assignments",
-				Unique:  true,
-				Columns: []*schema.Column{UserTasksColumns[3], UserTasksColumns[2]},
-			},
-		},
-	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ProjectsTable,
@@ -163,7 +138,6 @@ var (
 		ProjectUsersTable,
 		TasksTable,
 		UsersTable,
-		UserTasksTable,
 	}
 )
 
@@ -172,6 +146,5 @@ func init() {
 	ProjectTasksTable.ForeignKeys[1].RefTable = TasksTable
 	ProjectUsersTable.ForeignKeys[0].RefTable = ProjectsTable
 	ProjectUsersTable.ForeignKeys[1].RefTable = UsersTable
-	UserTasksTable.ForeignKeys[0].RefTable = TasksTable
-	UserTasksTable.ForeignKeys[1].RefTable = UsersTable
+	TasksTable.ForeignKeys[0].RefTable = UsersTable
 }

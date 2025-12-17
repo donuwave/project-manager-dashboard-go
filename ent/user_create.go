@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"project-manager-dashboard-go/ent/projectuser"
+	"project-manager-dashboard-go/ent/task"
 	"project-manager-dashboard-go/ent/user"
-	"project-manager-dashboard-go/ent/usertask"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -77,6 +77,21 @@ func (_c *UserCreate) SetNillableID(v *uuid.UUID) *UserCreate {
 	return _c
 }
 
+// AddAssignedTaskIDs adds the "assigned_tasks" edge to the Task entity by IDs.
+func (_c *UserCreate) AddAssignedTaskIDs(ids ...uuid.UUID) *UserCreate {
+	_c.mutation.AddAssignedTaskIDs(ids...)
+	return _c
+}
+
+// AddAssignedTasks adds the "assigned_tasks" edges to the Task entity.
+func (_c *UserCreate) AddAssignedTasks(v ...*Task) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAssignedTaskIDs(ids...)
+}
+
 // AddMembershipIDs adds the "memberships" edge to the ProjectUser entity by IDs.
 func (_c *UserCreate) AddMembershipIDs(ids ...uuid.UUID) *UserCreate {
 	_c.mutation.AddMembershipIDs(ids...)
@@ -90,21 +105,6 @@ func (_c *UserCreate) AddMemberships(v ...*ProjectUser) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddMembershipIDs(ids...)
-}
-
-// AddAssignmentIDs adds the "assignments" edge to the UserTask entity by IDs.
-func (_c *UserCreate) AddAssignmentIDs(ids ...uuid.UUID) *UserCreate {
-	_c.mutation.AddAssignmentIDs(ids...)
-	return _c
-}
-
-// AddAssignments adds the "assignments" edges to the UserTask entity.
-func (_c *UserCreate) AddAssignments(v ...*UserTask) *UserCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddAssignmentIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -214,6 +214,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
+	if nodes := _c.mutation.AssignedTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.AssignedTasksTable,
+			Columns: []string{user.AssignedTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.MembershipsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -223,22 +239,6 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(projectuser.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.AssignmentsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.AssignmentsTable,
-			Columns: []string{user.AssignmentsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usertask.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

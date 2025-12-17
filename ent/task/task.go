@@ -32,10 +32,12 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldAssigneeID holds the string denoting the assignee_id field in the database.
+	FieldAssigneeID = "assignee_id"
 	// EdgeProjectTasks holds the string denoting the project_tasks edge name in mutations.
 	EdgeProjectTasks = "project_tasks"
-	// EdgeAssignments holds the string denoting the assignments edge name in mutations.
-	EdgeAssignments = "assignments"
+	// EdgeAssignee holds the string denoting the assignee edge name in mutations.
+	EdgeAssignee = "assignee"
 	// Table holds the table name of the task in the database.
 	Table = "tasks"
 	// ProjectTasksTable is the table that holds the project_tasks relation/edge.
@@ -45,13 +47,13 @@ const (
 	ProjectTasksInverseTable = "project_tasks"
 	// ProjectTasksColumn is the table column denoting the project_tasks relation/edge.
 	ProjectTasksColumn = "task_project_tasks"
-	// AssignmentsTable is the table that holds the assignments relation/edge.
-	AssignmentsTable = "user_tasks"
-	// AssignmentsInverseTable is the table name for the UserTask entity.
-	// It exists in this package in order to avoid circular dependency with the "usertask" package.
-	AssignmentsInverseTable = "user_tasks"
-	// AssignmentsColumn is the table column denoting the assignments relation/edge.
-	AssignmentsColumn = "task_assignments"
+	// AssigneeTable is the table that holds the assignee relation/edge.
+	AssigneeTable = "tasks"
+	// AssigneeInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	AssigneeInverseTable = "users"
+	// AssigneeColumn is the table column denoting the assignee relation/edge.
+	AssigneeColumn = "assignee_id"
 )
 
 // Columns holds all SQL columns for task fields.
@@ -65,6 +67,7 @@ var Columns = []string{
 	FieldDueDate,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldAssigneeID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -192,6 +195,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByAssigneeID orders the results by the assignee_id field.
+func ByAssigneeID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAssigneeID, opts...).ToFunc()
+}
+
 // ByProjectTasksCount orders the results by project_tasks count.
 func ByProjectTasksCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -206,17 +214,10 @@ func ByProjectTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByAssignmentsCount orders the results by assignments count.
-func ByAssignmentsCount(opts ...sql.OrderTermOption) OrderOption {
+// ByAssigneeField orders the results by assignee field.
+func ByAssigneeField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newAssignmentsStep(), opts...)
-	}
-}
-
-// ByAssignments orders the results by assignments terms.
-func ByAssignments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newAssignmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newAssigneeStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newProjectTasksStep() *sqlgraph.Step {
@@ -226,10 +227,10 @@ func newProjectTasksStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, ProjectTasksTable, ProjectTasksColumn),
 	)
 }
-func newAssignmentsStep() *sqlgraph.Step {
+func newAssigneeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(AssignmentsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, AssignmentsTable, AssignmentsColumn),
+		sqlgraph.To(AssigneeInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, AssigneeTable, AssigneeColumn),
 	)
 }

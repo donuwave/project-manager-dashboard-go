@@ -6,14 +6,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 	_ "github.com/lib/pq"
 	"log"
-	"os"
-
 	"project-manager-dashboard-go/ent"
 	"project-manager-dashboard-go/ent/migrate"
 )
 
 func main() {
-	dsn := os.Getenv("DATABASE_URL")
+	dsn := "postgres://app:app@localhost:5433/app?sslmode=disable"
 	if dsn == "" {
 		log.Fatal("DATABASE_URL is empty")
 	}

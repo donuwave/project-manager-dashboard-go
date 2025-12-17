@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"project-manager-dashboard-go/ent/projecttask"
 	"project-manager-dashboard-go/ent/task"
-	"project-manager-dashboard-go/ent/usertask"
+	"project-manager-dashboard-go/ent/user"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -127,6 +127,20 @@ func (_c *TaskCreate) SetNillableUpdatedAt(v *time.Time) *TaskCreate {
 	return _c
 }
 
+// SetAssigneeID sets the "assignee_id" field.
+func (_c *TaskCreate) SetAssigneeID(v uuid.UUID) *TaskCreate {
+	_c.mutation.SetAssigneeID(v)
+	return _c
+}
+
+// SetNillableAssigneeID sets the "assignee_id" field if the given value is not nil.
+func (_c *TaskCreate) SetNillableAssigneeID(v *uuid.UUID) *TaskCreate {
+	if v != nil {
+		_c.SetAssigneeID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *TaskCreate) SetID(v uuid.UUID) *TaskCreate {
 	_c.mutation.SetID(v)
@@ -156,19 +170,9 @@ func (_c *TaskCreate) AddProjectTasks(v ...*ProjectTask) *TaskCreate {
 	return _c.AddProjectTaskIDs(ids...)
 }
 
-// AddAssignmentIDs adds the "assignments" edge to the UserTask entity by IDs.
-func (_c *TaskCreate) AddAssignmentIDs(ids ...uuid.UUID) *TaskCreate {
-	_c.mutation.AddAssignmentIDs(ids...)
-	return _c
-}
-
-// AddAssignments adds the "assignments" edges to the UserTask entity.
-func (_c *TaskCreate) AddAssignments(v ...*UserTask) *TaskCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddAssignmentIDs(ids...)
+// SetAssignee sets the "assignee" edge to the User entity.
+func (_c *TaskCreate) SetAssignee(v *User) *TaskCreate {
+	return _c.SetAssigneeID(v.ID)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -345,20 +349,21 @@ func (_c *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.AssignmentsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.AssigneeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   task.AssignmentsTable,
-			Columns: []string{task.AssignmentsColumn},
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   task.AssigneeTable,
+			Columns: []string{task.AssigneeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(usertask.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.AssigneeID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

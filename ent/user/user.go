@@ -23,12 +23,19 @@ const (
 	FieldCountry = "country"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// EdgeAssignedTasks holds the string denoting the assigned_tasks edge name in mutations.
+	EdgeAssignedTasks = "assigned_tasks"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
 	EdgeMemberships = "memberships"
-	// EdgeAssignments holds the string denoting the assignments edge name in mutations.
-	EdgeAssignments = "assignments"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// AssignedTasksTable is the table that holds the assigned_tasks relation/edge.
+	AssignedTasksTable = "tasks"
+	// AssignedTasksInverseTable is the table name for the Task entity.
+	// It exists in this package in order to avoid circular dependency with the "task" package.
+	AssignedTasksInverseTable = "tasks"
+	// AssignedTasksColumn is the table column denoting the assigned_tasks relation/edge.
+	AssignedTasksColumn = "assignee_id"
 	// MembershipsTable is the table that holds the memberships relation/edge.
 	MembershipsTable = "project_users"
 	// MembershipsInverseTable is the table name for the ProjectUser entity.
@@ -36,13 +43,6 @@ const (
 	MembershipsInverseTable = "project_users"
 	// MembershipsColumn is the table column denoting the memberships relation/edge.
 	MembershipsColumn = "user_memberships"
-	// AssignmentsTable is the table that holds the assignments relation/edge.
-	AssignmentsTable = "user_tasks"
-	// AssignmentsInverseTable is the table name for the UserTask entity.
-	// It exists in this package in order to avoid circular dependency with the "usertask" package.
-	AssignmentsInverseTable = "user_tasks"
-	// AssignmentsColumn is the table column denoting the assignments relation/edge.
-	AssignmentsColumn = "user_assignments"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -99,6 +99,20 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
 }
 
+// ByAssignedTasksCount orders the results by assigned_tasks count.
+func ByAssignedTasksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAssignedTasksStep(), opts...)
+	}
+}
+
+// ByAssignedTasks orders the results by assigned_tasks terms.
+func ByAssignedTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAssignedTasksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByMembershipsCount orders the results by memberships count.
 func ByMembershipsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -112,31 +126,17 @@ func ByMemberships(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMembershipsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-
-// ByAssignmentsCount orders the results by assignments count.
-func ByAssignmentsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newAssignmentsStep(), opts...)
-	}
-}
-
-// ByAssignments orders the results by assignments terms.
-func ByAssignments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newAssignmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
+func newAssignedTasksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AssignedTasksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AssignedTasksTable, AssignedTasksColumn),
+	)
 }
 func newMembershipsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MembershipsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, MembershipsTable, MembershipsColumn),
-	)
-}
-func newAssignmentsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(AssignmentsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, AssignmentsTable, AssignmentsColumn),
 	)
 }

@@ -11,7 +11,6 @@ import (
 	"project-manager-dashboard-go/ent/projectuser"
 	"project-manager-dashboard-go/ent/task"
 	"project-manager-dashboard-go/ent/user"
-	"project-manager-dashboard-go/ent/usertask"
 	"reflect"
 	"sync"
 
@@ -83,7 +82,6 @@ func checkColumn(t, c string) error {
 			projectuser.Table: projectuser.ValidColumn,
 			task.Table:        task.ValidColumn,
 			user.Table:        user.ValidColumn,
-			usertask.Table:    usertask.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

@@ -10,7 +10,7 @@ import (
 	"project-manager-dashboard-go/ent/predicate"
 	"project-manager-dashboard-go/ent/projecttask"
 	"project-manager-dashboard-go/ent/task"
-	"project-manager-dashboard-go/ent/usertask"
+	"project-manager-dashboard-go/ent/user"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -27,7 +27,7 @@ type TaskQuery struct {
 	inters           []Interceptor
 	predicates       []predicate.Task
 	withProjectTasks *ProjectTaskQuery
-	withAssignments  *UserTaskQuery
+	withAssignee     *UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -86,9 +86,9 @@ func (_q *TaskQuery) QueryProjectTasks() *ProjectTaskQuery {
 	return query
 }
 
-// QueryAssignments chains the current query on the "assignments" edge.
-func (_q *TaskQuery) QueryAssignments() *UserTaskQuery {
-	query := (&UserTaskClient{config: _q.config}).Query()
+// QueryAssignee chains the current query on the "assignee" edge.
+func (_q *TaskQuery) QueryAssignee() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -99,8 +99,8 @@ func (_q *TaskQuery) QueryAssignments() *UserTaskQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(task.Table, task.FieldID, selector),
-			sqlgraph.To(usertask.Table, usertask.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, task.AssignmentsTable, task.AssignmentsColumn),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, task.AssigneeTable, task.AssigneeColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -301,7 +301,7 @@ func (_q *TaskQuery) Clone() *TaskQuery {
 		inters:           append([]Interceptor{}, _q.inters...),
 		predicates:       append([]predicate.Task{}, _q.predicates...),
 		withProjectTasks: _q.withProjectTasks.Clone(),
-		withAssignments:  _q.withAssignments.Clone(),
+		withAssignee:     _q.withAssignee.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -319,14 +319,14 @@ func (_q *TaskQuery) WithProjectTasks(opts ...func(*ProjectTaskQuery)) *TaskQuer
 	return _q
 }
 
-// WithAssignments tells the query-builder to eager-load the nodes that are connected to
-// the "assignments" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *TaskQuery) WithAssignments(opts ...func(*UserTaskQuery)) *TaskQuery {
-	query := (&UserTaskClient{config: _q.config}).Query()
+// WithAssignee tells the query-builder to eager-load the nodes that are connected to
+// the "assignee" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *TaskQuery) WithAssignee(opts ...func(*UserQuery)) *TaskQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withAssignments = query
+	_q.withAssignee = query
 	return _q
 }
 
@@ -410,7 +410,7 @@ func (_q *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
 			_q.withProjectTasks != nil,
-			_q.withAssignments != nil,
+			_q.withAssignee != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -438,10 +438,9 @@ func (_q *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 			return nil, err
 		}
 	}
-	if query := _q.withAssignments; query != nil {
-		if err := _q.loadAssignments(ctx, query, nodes,
-			func(n *Task) { n.Edges.Assignments = []*UserTask{} },
-			func(n *Task, e *UserTask) { n.Edges.Assignments = append(n.Edges.Assignments, e) }); err != nil {
+	if query := _q.withAssignee; query != nil {
+		if err := _q.loadAssignee(ctx, query, nodes, nil,
+			func(n *Task, e *User) { n.Edges.Assignee = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -479,34 +478,35 @@ func (_q *TaskQuery) loadProjectTasks(ctx context.Context, query *ProjectTaskQue
 	}
 	return nil
 }
-func (_q *TaskQuery) loadAssignments(ctx context.Context, query *UserTaskQuery, nodes []*Task, init func(*Task), assign func(*Task, *UserTask)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Task)
+func (_q *TaskQuery) loadAssignee(ctx context.Context, query *UserQuery, nodes []*Task, init func(*Task), assign func(*Task, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Task)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		if nodes[i].AssigneeID == nil {
+			continue
 		}
+		fk := *nodes[i].AssigneeID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.UserTask(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(task.AssignmentsColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.task_assignments
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "task_assignments" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "task_assignments" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "assignee_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
@@ -535,6 +535,9 @@ func (_q *TaskQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != task.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withAssignee != nil {
+			_spec.Node.AddColumnOnce(task.FieldAssigneeID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

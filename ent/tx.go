@@ -22,8 +22,6 @@ type Tx struct {
 	Task *TaskClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
-	// UserTask is the client for interacting with the UserTask builders.
-	UserTask *UserTaskClient
 
 	// lazily loaded.
 	client     *Client
@@ -160,7 +158,6 @@ func (tx *Tx) init() {
 	tx.ProjectUser = NewProjectUserClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.User = NewUserClient(tx.config)
-	tx.UserTask = NewUserTaskClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

@@ -16,7 +16,6 @@ import (
 	"project-manager-dashboard-go/ent/projectuser"
 	"project-manager-dashboard-go/ent/task"
 	"project-manager-dashboard-go/ent/user"
-	"project-manager-dashboard-go/ent/usertask"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -40,8 +39,6 @@ type Client struct {
 	Task *TaskClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
-	// UserTask is the client for interacting with the UserTask builders.
-	UserTask *UserTaskClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -58,7 +55,6 @@ func (c *Client) init() {
 	c.ProjectUser = NewProjectUserClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.User = NewUserClient(c.config)
-	c.UserTask = NewUserTaskClient(c.config)
 }
 
 type (
@@ -156,7 +152,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ProjectUser: NewProjectUserClient(cfg),
 		Task:        NewTaskClient(cfg),
 		User:        NewUserClient(cfg),
-		UserTask:    NewUserTaskClient(cfg),
 	}, nil
 }
 
@@ -181,7 +176,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ProjectUser: NewProjectUserClient(cfg),
 		Task:        NewTaskClient(cfg),
 		User:        NewUserClient(cfg),
-		UserTask:    NewUserTaskClient(cfg),
 	}, nil
 }
 
@@ -210,21 +204,21 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	for _, n := range []interface{ Use(...Hook) }{
-		c.Project, c.ProjectTask, c.ProjectUser, c.Task, c.User, c.UserTask,
-	} {
-		n.Use(hooks...)
-	}
+	c.Project.Use(hooks...)
+	c.ProjectTask.Use(hooks...)
+	c.ProjectUser.Use(hooks...)
+	c.Task.Use(hooks...)
+	c.User.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Project, c.ProjectTask, c.ProjectUser, c.Task, c.User, c.UserTask,
-	} {
-		n.Intercept(interceptors...)
-	}
+	c.Project.Intercept(interceptors...)
+	c.ProjectTask.Intercept(interceptors...)
+	c.ProjectUser.Intercept(interceptors...)
+	c.Task.Intercept(interceptors...)
+	c.User.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -240,8 +234,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Task.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
-	case *UserTaskMutation:
-		return c.UserTask.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -866,15 +858,15 @@ func (c *TaskClient) QueryProjectTasks(_m *Task) *ProjectTaskQuery {
 	return query
 }
 
-// QueryAssignments queries the assignments edge of a Task.
-func (c *TaskClient) QueryAssignments(_m *Task) *UserTaskQuery {
-	query := (&UserTaskClient{config: c.config}).Query()
+// QueryAssignee queries the assignee edge of a Task.
+func (c *TaskClient) QueryAssignee(_m *Task) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(task.Table, task.FieldID, id),
-			sqlgraph.To(usertask.Table, usertask.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, task.AssignmentsTable, task.AssignmentsColumn),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, task.AssigneeTable, task.AssigneeColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1015,6 +1007,22 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
+// QueryAssignedTasks queries the assigned_tasks edge of a User.
+func (c *UserClient) QueryAssignedTasks(_m *User) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.AssignedTasksTable, user.AssignedTasksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryMemberships queries the memberships edge of a User.
 func (c *UserClient) QueryMemberships(_m *User) *ProjectUserQuery {
 	query := (&ProjectUserClient{config: c.config}).Query()
@@ -1024,22 +1032,6 @@ func (c *UserClient) QueryMemberships(_m *User) *ProjectUserQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(projectuser.Table, projectuser.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.MembershipsTable, user.MembershipsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryAssignments queries the assignments edge of a User.
-func (c *UserClient) QueryAssignments(_m *User) *UserTaskQuery {
-	query := (&UserTaskClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(usertask.Table, usertask.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.AssignmentsTable, user.AssignmentsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1072,177 +1064,12 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 	}
 }
 
-// UserTaskClient is a client for the UserTask schema.
-type UserTaskClient struct {
-	config
-}
-
-// NewUserTaskClient returns a client for the UserTask from the given config.
-func NewUserTaskClient(c config) *UserTaskClient {
-	return &UserTaskClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `usertask.Hooks(f(g(h())))`.
-func (c *UserTaskClient) Use(hooks ...Hook) {
-	c.hooks.UserTask = append(c.hooks.UserTask, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `usertask.Intercept(f(g(h())))`.
-func (c *UserTaskClient) Intercept(interceptors ...Interceptor) {
-	c.inters.UserTask = append(c.inters.UserTask, interceptors...)
-}
-
-// Create returns a builder for creating a UserTask entity.
-func (c *UserTaskClient) Create() *UserTaskCreate {
-	mutation := newUserTaskMutation(c.config, OpCreate)
-	return &UserTaskCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of UserTask entities.
-func (c *UserTaskClient) CreateBulk(builders ...*UserTaskCreate) *UserTaskCreateBulk {
-	return &UserTaskCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *UserTaskClient) MapCreateBulk(slice any, setFunc func(*UserTaskCreate, int)) *UserTaskCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &UserTaskCreateBulk{err: fmt.Errorf("calling to UserTaskClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*UserTaskCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &UserTaskCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for UserTask.
-func (c *UserTaskClient) Update() *UserTaskUpdate {
-	mutation := newUserTaskMutation(c.config, OpUpdate)
-	return &UserTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *UserTaskClient) UpdateOne(_m *UserTask) *UserTaskUpdateOne {
-	mutation := newUserTaskMutation(c.config, OpUpdateOne, withUserTask(_m))
-	return &UserTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *UserTaskClient) UpdateOneID(id uuid.UUID) *UserTaskUpdateOne {
-	mutation := newUserTaskMutation(c.config, OpUpdateOne, withUserTaskID(id))
-	return &UserTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for UserTask.
-func (c *UserTaskClient) Delete() *UserTaskDelete {
-	mutation := newUserTaskMutation(c.config, OpDelete)
-	return &UserTaskDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *UserTaskClient) DeleteOne(_m *UserTask) *UserTaskDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *UserTaskClient) DeleteOneID(id uuid.UUID) *UserTaskDeleteOne {
-	builder := c.Delete().Where(usertask.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &UserTaskDeleteOne{builder}
-}
-
-// Query returns a query builder for UserTask.
-func (c *UserTaskClient) Query() *UserTaskQuery {
-	return &UserTaskQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeUserTask},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a UserTask entity by its id.
-func (c *UserTaskClient) Get(ctx context.Context, id uuid.UUID) (*UserTask, error) {
-	return c.Query().Where(usertask.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *UserTaskClient) GetX(ctx context.Context, id uuid.UUID) *UserTask {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryUser queries the user edge of a UserTask.
-func (c *UserTaskClient) QueryUser(_m *UserTask) *UserQuery {
-	query := (&UserClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(usertask.Table, usertask.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, usertask.UserTable, usertask.UserColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryTask queries the task edge of a UserTask.
-func (c *UserTaskClient) QueryTask(_m *UserTask) *TaskQuery {
-	query := (&TaskClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(usertask.Table, usertask.FieldID, id),
-			sqlgraph.To(task.Table, task.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, usertask.TaskTable, usertask.TaskColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *UserTaskClient) Hooks() []Hook {
-	return c.hooks.UserTask
-}
-
-// Interceptors returns the client interceptors.
-func (c *UserTaskClient) Interceptors() []Interceptor {
-	return c.inters.UserTask
-}
-
-func (c *UserTaskClient) mutate(ctx context.Context, m *UserTaskMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&UserTaskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&UserTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&UserTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&UserTaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown UserTask mutation op: %q", m.Op())
-	}
-}
-
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Project, ProjectTask, ProjectUser, Task, User, UserTask []ent.Hook
+		Project, ProjectTask, ProjectUser, Task, User []ent.Hook
 	}
 	inters struct {
-		Project, ProjectTask, ProjectUser, Task, User, UserTask []ent.Interceptor
+		Project, ProjectTask, ProjectUser, Task, User []ent.Interceptor
 	}
 )
