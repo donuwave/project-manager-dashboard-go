@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type DeleteProjectRequest struct {
+	ActorID string `json:"actorId"`
+}
+
 type CreateProjectRequest struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`

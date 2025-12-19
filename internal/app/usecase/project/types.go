@@ -52,4 +52,6 @@ type ProjectRepository interface {
 	UserExists(ctx context.Context, userID uuid.UUID) (bool, error)
 	IsMember(ctx context.Context, projectID, userID uuid.UUID) (bool, error)
 	AddMember(ctx context.Context, projectID, userID uuid.UUID, role string) error
+	GetMemberRole(ctx context.Context, projectID, userID uuid.UUID) (string, error)
+	DeleteProject(ctx context.Context, projectID uuid.UUID) error
 }

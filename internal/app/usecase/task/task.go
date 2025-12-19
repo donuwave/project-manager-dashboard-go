@@ -96,3 +96,20 @@ func (uc *UseCase) Assign(ctx context.Context, taskID, actorID, userID uuid.UUID
 
 	return uc.repo.SetAssignee(ctx, taskID, userID)
 }
+
+func (uc *UseCase) Delete(ctx context.Context, taskID, actorID uuid.UUID) error {
+	projectID, err := uc.repo.GetProjectIDByTask(ctx, taskID)
+	if err != nil {
+		return err
+	}
+
+	role, err := uc.repo.GetMemberRole(ctx, projectID, actorID)
+	if err != nil {
+		return err
+	}
+	if role != "owner" {
+		return ErrForbidden
+	}
+
+	return uc.repo.DeleteTask(ctx, taskID)
+}

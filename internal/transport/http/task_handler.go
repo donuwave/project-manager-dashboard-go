@@ -191,3 +191,37 @@ func (h *TaskHandler) Assign(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 
 	writeJSON(w, stdhttp.StatusCreated, map[string]string{"status": "assigned"})
 }
+
+func (h *TaskHandler) DeleteTask(w stdhttp.ResponseWriter, r *stdhttp.Request) {
+	ctx := r.Context()
+
+	taskID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid task id"})
+		return
+	}
+
+	var req dto.DeleteTaskRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+
+	actorID, err := uuid.Parse(req.ActorID)
+	if err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid actorId"})
+		return
+	}
+
+	err = h.uc.Delete(ctx, taskID, actorID)
+	if err != nil {
+		switch {
+
+		default:
+			writeJSON(w, stdhttp.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return
+	}
+
+	w.WriteHeader(stdhttp.StatusNoContent)
+}

@@ -11,6 +11,7 @@ import (
 	"project-manager-dashboard-go/ent"
 	"project-manager-dashboard-go/ent/project"
 	"project-manager-dashboard-go/ent/projecttask"
+	enttask "project-manager-dashboard-go/ent/task"
 )
 
 type EntRepo struct{ client *ent.Client }
@@ -145,13 +146,12 @@ func (r *EntRepo) GetProjectIDByTask(ctx context.Context, taskID uuid.UUID) (uui
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return uuid.Nil, nil
+			return uuid.Nil, ErrNotFound
 		}
 		return uuid.Nil, err
 	}
-
 	if pt.Edges.Project == nil {
-		return uuid.Nil, nil
+		return uuid.Nil, ErrNotFound
 	}
 	return pt.Edges.Project.ID, nil
 }
@@ -179,6 +179,9 @@ func (r *EntRepo) GetMemberRole(ctx context.Context, projectID, userID uuid.UUID
 		).
 		Only(ctx)
 	if err != nil {
+		if ent.IsNotFound(err) {
+			return "", ErrForbidden
+		}
 		return "", err
 	}
 	return string(m.Role), nil
@@ -221,4 +224,32 @@ func (r *EntRepo) ClearAssignee(ctx context.Context, taskID uuid.UUID) error {
 		UpdateOneID(taskID).
 		ClearAssigneeID().
 		Exec(ctx)
+}
+
+func (r *EntRepo) DeleteTask(ctx context.Context, taskID uuid.UUID) (err error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	_, err = tx.ProjectTask.
+		Delete().
+		Where(projecttask.HasTaskWith(enttask.IDEQ(taskID))).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Task.DeleteOneID(taskID).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	return err
 }

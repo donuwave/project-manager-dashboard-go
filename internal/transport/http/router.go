@@ -21,9 +21,11 @@ func NewRouter(userH *UserHandler, projectH *ProjectHandler, taskH *TaskHandler)
 	r.Post("/projects/{id}/invite", projectH.Invite)
 	r.Get("/projects/{id}/tasks", taskH.ListByProject)
 	r.Post("/projects/{id}/tasks", taskH.CreateInProject)
+	r.Delete("/projects/{id}", projectH.DeleteProject)
 
 	r.Patch("/tasks/{id}", taskH.UpdateTask)
 	r.Post("/tasks/{id}/assign", taskH.Assign)
+	r.Delete("/tasks/{id}", taskH.DeleteTask)
 
 	return r
 }

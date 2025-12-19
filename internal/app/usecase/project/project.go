@@ -79,3 +79,23 @@ func (uc *UseCase) Invite(ctx context.Context, projectID, inviterID, userID uuid
 
 	return uc.repo.AddMember(ctx, projectID, userID, "member")
 }
+
+func (uc *UseCase) Delete(ctx context.Context, projectID, actorID uuid.UUID) error {
+	ok, err := uc.repo.ProjectExists(ctx, projectID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrNotFound
+	}
+
+	role, err := uc.repo.GetMemberRole(ctx, projectID, actorID)
+	if err != nil {
+		return err
+	}
+	if role != "owner" {
+		return ErrForbidden
+	}
+
+	return uc.repo.DeleteProject(ctx, projectID)
+}

@@ -222,6 +222,43 @@ func (h *ProjectHandler) Invite(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 	writeJSON(w, stdhttp.StatusCreated, map[string]string{"status": "invited"})
 }
 
+func (h *ProjectHandler) DeleteProject(w stdhttp.ResponseWriter, r *stdhttp.Request) {
+	ctx := r.Context()
+
+	projectID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid project id"})
+		return
+	}
+
+	var req dto.DeleteProjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+
+	actorID, err := uuid.Parse(req.ActorID)
+	if err != nil {
+		writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": "invalid actorId"})
+		return
+	}
+
+	err = h.uc.Delete(ctx, projectID, actorID)
+	if err != nil {
+		switch {
+		case errors.Is(err, project.ErrNotFound):
+			writeJSON(w, stdhttp.StatusNotFound, map[string]string{"error": "project not found"})
+		case errors.Is(err, project.ErrForbidden):
+			writeJSON(w, stdhttp.StatusForbidden, map[string]string{"error": "forbidden"})
+		default:
+			writeJSON(w, stdhttp.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return
+	}
+
+	w.WriteHeader(stdhttp.StatusNoContent)
+}
+
 func writeJSON(w stdhttp.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)

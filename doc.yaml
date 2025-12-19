@@ -1,0 +1,451 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: manager-dashboard
+meta:
+  id: wrk_38c80f5e28204bfab0d9a42278a1406c
+  created: 1765664605717
+  modified: 1765665164594
+  description: ""
+collection:
+  - name: USER
+    meta:
+      id: fld_5a8cf809cdd847dea099d07d288d91e9
+      created: 1765664750679
+      modified: 1765664750679
+      sortKey: -1765664750679
+      description: ""
+    children:
+      - url: http://localhost:8081/users
+        name: GET USERS
+        meta:
+          id: req_188e29ffc1fc4092ad88a55ace472de6
+          created: 1765664605748
+          modified: 1765664770993
+          isPrivate: false
+          description: ""
+          sortKey: -1765664770969
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/users/03ea7a64-c949-441d-b4ee-99d6de91c51c
+        name: GET USER
+        meta:
+          id: req_de1a4dcdecf4427185b7389a9fa772be
+          created: 1765664660224
+          modified: 1765745065891
+          isPrivate: false
+          description: ""
+          sortKey: -1765664771069
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/users
+        name: CREATE USER
+        meta:
+          id: req_acc68669fcd8453498c51f2d14602155
+          created: 1765664669270
+          modified: 1766171852871
+          isPrivate: false
+          description: ""
+          sortKey: -1765664771169
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"email":"daniil2@mail.ru",
+            	"name":"daniil2",
+            	"country":"Russia"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: PROJECTS
+    meta:
+      id: fld_3bf7c5f432c94405adc05b98097e6a5a
+      created: 1765664790566
+      modified: 1765664859286
+      sortKey: -1765664790566
+      description: ""
+    children:
+      - url: http://localhost:8081/projects
+        name: GET PROJECTS
+        meta:
+          id: req_1b20a0d1a4194d1d9bfa4f28716f02b0
+          created: 1765664837656
+          modified: 1765664853509
+          isPrivate: false
+          description: ""
+          sortKey: -1765664837656
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/projects/eeca3931-f23b-4d04-8c54-3ba0bf319f5f
+        name: GET PROJECT
+        meta:
+          id: req_563d0db7a8404d819b5d2d63cf4b69cb
+          created: 1765664860507
+          modified: 1766171936559
+          isPrivate: false
+          description: ""
+          sortKey: -1765664860507
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/projects/eeca3931-f23b-4d04-8c54-3ba0bf319f5f/invite
+        name: INVITE USER IN PROJECT
+        meta:
+          id: req_983ad3aa1d244519a832ef4419767c10
+          created: 1765664879474
+          modified: 1766171928691
+          isPrivate: false
+          description: ""
+          sortKey: -1765664879474
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+                "inviterId":"5ab1d698-122c-4fa4-8bd4-589c641849b8",
+                "userId":"f7fbfb8e-8047-42ba-bf7e-a5b159e3e482"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/projects
+        name: CREATE PROJECT
+        meta:
+          id: req_29e20440b68b47e0bd5aa60ce8fcb73f
+          created: 1765665020385
+          modified: 1766171875122
+          isPrivate: false
+          description: ""
+          sortKey: -1765665020385
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"name": "Frontend2",
+            	"description": "Frontend app",
+            	"userID": "5ab1d698-122c-4fa4-8bd4-589c641849b8"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/projects/eeca3931-f23b-4d04-8c54-3ba0bf319f5f
+        name: UPDATE PROJECT
+        meta:
+          id: req_1a59d51931804405b79e6b3c391c69f9
+          created: 1765742556870
+          modified: 1766171963238
+          isPrivate: false
+          description: ""
+          sortKey: -1765742556870
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            		"name": "Backend",
+            		"description": "Backend"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/projects/37e03b57-d215-4b16-8dfb-4faf20b9195c
+        name: DELETE PROJECT
+        meta:
+          id: req_ab3c558b72ae4cbc8228f94e629bdb00
+          created: 1766089870555
+          modified: 1766090035410
+          isPrivate: false
+          description: ""
+          sortKey: -1766089870555
+        method: DELETE
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            "ActorID": "d937e3ca-0e4b-4faa-869b-77e8f8806acb"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: TASKS
+    meta:
+      id: fld_1d509a54c10c4e709e0ac1d4043a34b1
+      created: 1765667262850
+      modified: 1765667262850
+      sortKey: -1765667262850
+      description: ""
+    children:
+      - url: http://localhost:8081/projects/eeca3931-f23b-4d04-8c54-3ba0bf319f5f/tasks
+        name: GET TASKS IN PROJECTS
+        meta:
+          id: req_85b4f3316f2c4cd7b7bfa4dc12f0f456
+          created: 1765667266728
+          modified: 1766171993556
+          isPrivate: false
+          description: ""
+          sortKey: -1765667269493
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/projects/eeca3931-f23b-4d04-8c54-3ba0bf319f5f/tasks
+        name: CREATE TASK IN PROJECT
+        meta:
+          id: req_c2fb8c55bae6482a90f39ab462f33066
+          created: 1765668080604
+          modified: 1766171972633
+          isPrivate: false
+          description: ""
+          sortKey: -1765668080604
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"title": "Сделать каркас",
+            	"description": "Сделать каркас",
+            	"status": "todo"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/tasks/04b5caa0-65ec-4eb1-8de0-ac3d9a4d33ff
+        name: UPDATE TASK
+        meta:
+          id: req_dd04d4fb7c23406aab24490cdba12d16
+          created: 1765743033696
+          modified: 1765744731035
+          isPrivate: false
+          description: ""
+          sortKey: -1765743033696
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            		"Title": "Сделать каркасик",
+            		"Description": "Сделать каркас",
+            		"Status": "done"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/tasks/81e93e3c-c328-4976-a75c-f33b2ea09f03/assign
+        name: ASSIGN TASK
+        meta:
+          id: req_2b2261c7e7104cf3a7480e2fc414f2fa
+          created: 1765744975831
+          modified: 1766172035732
+          isPrivate: false
+          description: ""
+          sortKey: -1765744975831
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"actorID" : "5ab1d698-122c-4fa4-8bd4-589c641849b8",
+            	"userID": "5ab1d698-122c-4fa4-8bd4-589c641849b8"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/tasks/04b5caa0-65ec-4eb1-8de0-ac3d9a4d33ff
+        name: DELETE TASK
+        meta:
+          id: req_e1db7aeb30ee4ec79a5752dbf08539e7
+          created: 1766089899469
+          modified: 1766089982967
+          isPrivate: false
+          description: ""
+          sortKey: -1766089899469
+        method: DELETE
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"ActorID": "d937e3ca-0e4b-4faa-869b-77e8f8806acb"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.1.0
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_2162bbc9510e6edaf7badee40f27bb6c6eee859d
+    created: 1765664605719
+    modified: 1765664605719
+environments:
+  name: Base Environment
+  meta:
+    id: env_2162bbc9510e6edaf7badee40f27bb6c6eee859d
+    created: 1765664605718
+    modified: 1765664605718
+    isPrivate: false

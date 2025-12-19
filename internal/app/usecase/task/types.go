@@ -45,4 +45,5 @@ type TasksRepository interface {
 	GetMemberRole(ctx context.Context, projectID, userID uuid.UUID) (string, error)
 	GetAssignee(ctx context.Context, taskID uuid.UUID) (*TaskAssigneeDTO, error)
 	SetAssignee(ctx context.Context, taskID, userID uuid.UUID) error
+	DeleteTask(ctx context.Context, taskID uuid.UUID) error
 }

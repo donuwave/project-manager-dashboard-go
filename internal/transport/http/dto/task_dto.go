@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type DeleteTaskRequest struct {
+	ActorID string `json:"actorId"`
+}
+
 type CreateTaskRequest struct {
 	Title       string  `json:"title"`
 	Description *string `json:"description,omitempty"`

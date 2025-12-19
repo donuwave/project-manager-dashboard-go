@@ -4,7 +4,9 @@ import (
 	"context"
 	"entgo.io/ent/dialect/sql"
 	"project-manager-dashboard-go/ent/project"
+	"project-manager-dashboard-go/ent/projecttask"
 	"project-manager-dashboard-go/ent/projectuser"
+	"project-manager-dashboard-go/ent/task"
 	"project-manager-dashboard-go/ent/user"
 
 	"github.com/google/uuid"
@@ -213,4 +215,77 @@ func (r *EntRepo) AddMember(ctx context.Context, projectID, userID uuid.UUID, ro
 		return ErrAlreadyMember
 	}
 	return err
+}
+
+func (r *EntRepo) GetMemberRole(ctx context.Context, projectID, userID uuid.UUID) (string, error) {
+	m, err := r.client.ProjectUser.
+		Query().
+		Where(
+			projectuser.HasProjectWith(project.IDEQ(projectID)),
+			projectuser.HasUserWith(user.IDEQ(userID)),
+		).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return "", ErrForbidden
+		}
+		return "", err
+	}
+	return string(m.Role), nil
+}
+func (r *EntRepo) DeleteProject(ctx context.Context, projectID uuid.UUID) (err error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	taskIDs, err := tx.ProjectTask.
+		Query().
+		Where(projecttask.HasProjectWith(project.IDEQ(projectID))).
+		QueryTask().
+		IDs(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ProjectTask.
+		Delete().
+		Where(projecttask.HasProjectWith(project.IDEQ(projectID))).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(taskIDs) > 0 {
+		_, err = tx.Task.
+			Delete().
+			Where(task.IDIn(taskIDs...)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = tx.ProjectUser.
+		Delete().
+		Where(projectuser.HasProjectWith(project.IDEQ(projectID))).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Project.
+		Delete().
+		Where(project.IDEQ(projectID)).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
