@@ -23,6 +23,20 @@ type ProjectTaskCreate struct {
 	hooks    []Hook
 }
 
+// SetPosition sets the "position" field.
+func (_c *ProjectTaskCreate) SetPosition(v int) *ProjectTaskCreate {
+	_c.mutation.SetPosition(v)
+	return _c
+}
+
+// SetNillablePosition sets the "position" field if the given value is not nil.
+func (_c *ProjectTaskCreate) SetNillablePosition(v *int) *ProjectTaskCreate {
+	if v != nil {
+		_c.SetPosition(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *ProjectTaskCreate) SetCreatedAt(v time.Time) *ProjectTaskCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -108,6 +122,10 @@ func (_c *ProjectTaskCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *ProjectTaskCreate) defaults() {
+	if _, ok := _c.mutation.Position(); !ok {
+		v := projecttask.DefaultPosition
+		_c.mutation.SetPosition(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := projecttask.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -120,6 +138,9 @@ func (_c *ProjectTaskCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *ProjectTaskCreate) check() error {
+	if _, ok := _c.mutation.Position(); !ok {
+		return &ValidationError{Name: "position", err: errors.New(`ent: missing required field "ProjectTask.position"`)}
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "ProjectTask.created_at"`)}
 	}
@@ -163,6 +184,10 @@ func (_c *ProjectTaskCreate) createSpec() (*ProjectTask, *sqlgraph.CreateSpec) {
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
+	}
+	if value, ok := _c.mutation.Position(); ok {
+		_spec.SetField(projecttask.FieldPosition, field.TypeInt, value)
+		_node.Position = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(projecttask.FieldCreatedAt, field.TypeTime, value)

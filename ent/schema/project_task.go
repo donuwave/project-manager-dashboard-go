@@ -21,6 +21,8 @@ func (ProjectTask) Fields() []ent.Field {
 			Default(uuid.New).
 			Immutable(),
 
+		field.Int("position").Default(0),
+
 		field.Time("created_at").Default(time.Now),
 	}
 }
@@ -42,5 +44,6 @@ func (ProjectTask) Edges() []ent.Edge {
 func (ProjectTask) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Edges("project", "task").Unique(),
+		index.Edges("project").Fields("position"),
 	}
 }

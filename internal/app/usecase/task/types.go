@@ -19,6 +19,7 @@ type TaskDTO struct {
 	Description string
 	Status      string
 	CreatedAt   time.Time
+	Position    int
 
 	Assignee *TaskAssigneeDTO
 }
@@ -27,6 +28,7 @@ type UpdateInput struct {
 	Title       *string
 	Description *string
 	Status      *string
+	Position    *int
 }
 
 type CreateInput struct {

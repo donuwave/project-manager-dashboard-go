@@ -15,6 +15,8 @@ const (
 	Label = "project_task"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldPosition holds the string denoting the position field in the database.
+	FieldPosition = "position"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeProject holds the string denoting the project edge name in mutations.
@@ -42,6 +44,7 @@ const (
 // Columns holds all SQL columns for projecttask fields.
 var Columns = []string{
 	FieldID,
+	FieldPosition,
 	FieldCreatedAt,
 }
 
@@ -68,6 +71,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultPosition holds the default value on creation for the "position" field.
+	DefaultPosition int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -80,6 +85,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByPosition orders the results by the position field.
+func ByPosition(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPosition, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

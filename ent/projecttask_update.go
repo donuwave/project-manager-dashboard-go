@@ -31,6 +31,27 @@ func (_u *ProjectTaskUpdate) Where(ps ...predicate.ProjectTask) *ProjectTaskUpda
 	return _u
 }
 
+// SetPosition sets the "position" field.
+func (_u *ProjectTaskUpdate) SetPosition(v int) *ProjectTaskUpdate {
+	_u.mutation.ResetPosition()
+	_u.mutation.SetPosition(v)
+	return _u
+}
+
+// SetNillablePosition sets the "position" field if the given value is not nil.
+func (_u *ProjectTaskUpdate) SetNillablePosition(v *int) *ProjectTaskUpdate {
+	if v != nil {
+		_u.SetPosition(*v)
+	}
+	return _u
+}
+
+// AddPosition adds value to the "position" field.
+func (_u *ProjectTaskUpdate) AddPosition(v int) *ProjectTaskUpdate {
+	_u.mutation.AddPosition(v)
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *ProjectTaskUpdate) SetCreatedAt(v time.Time) *ProjectTaskUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -134,6 +155,12 @@ func (_u *ProjectTaskUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			}
 		}
 	}
+	if value, ok := _u.mutation.Position(); ok {
+		_spec.SetField(projecttask.FieldPosition, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPosition(); ok {
+		_spec.AddField(projecttask.FieldPosition, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(projecttask.FieldCreatedAt, field.TypeTime, value)
 	}
@@ -213,6 +240,27 @@ type ProjectTaskUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *ProjectTaskMutation
+}
+
+// SetPosition sets the "position" field.
+func (_u *ProjectTaskUpdateOne) SetPosition(v int) *ProjectTaskUpdateOne {
+	_u.mutation.ResetPosition()
+	_u.mutation.SetPosition(v)
+	return _u
+}
+
+// SetNillablePosition sets the "position" field if the given value is not nil.
+func (_u *ProjectTaskUpdateOne) SetNillablePosition(v *int) *ProjectTaskUpdateOne {
+	if v != nil {
+		_u.SetPosition(*v)
+	}
+	return _u
+}
+
+// AddPosition adds value to the "position" field.
+func (_u *ProjectTaskUpdateOne) AddPosition(v int) *ProjectTaskUpdateOne {
+	_u.mutation.AddPosition(v)
+	return _u
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -347,6 +395,12 @@ func (_u *ProjectTaskUpdateOne) sqlSave(ctx context.Context) (_node *ProjectTask
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Position(); ok {
+		_spec.SetField(projecttask.FieldPosition, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPosition(); ok {
+		_spec.AddField(projecttask.FieldPosition, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(projecttask.FieldCreatedAt, field.TypeTime, value)

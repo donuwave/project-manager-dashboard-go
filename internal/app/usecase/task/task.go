@@ -33,6 +33,10 @@ func (uc *UseCase) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (Ta
 			return TaskDTO{}, errors.New("invalid status")
 		}
 	}
+	if in.Position != nil && *in.Position < 0 {
+		return TaskDTO{}, errors.New("position must be >= 0")
+	}
+
 	return uc.repo.Update(ctx, id, in)
 }
 

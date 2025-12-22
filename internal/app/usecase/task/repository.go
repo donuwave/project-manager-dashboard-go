@@ -25,6 +25,7 @@ func (r *EntRepo) ListByProject(ctx context.Context, projectID uuid.UUID, limit,
 		WithTask(func(tq *ent.TaskQuery) {
 			tq.WithAssignee()
 		}).
+		Order(ent.Asc(projecttask.FieldPosition), ent.Asc(projecttask.FieldCreatedAt)).
 		Limit(limit).
 		Offset(offset).
 		All(ctx)
@@ -54,6 +55,7 @@ func (r *EntRepo) ListByProject(ctx context.Context, projectID uuid.UUID, limit,
 			Description: t.Description,
 			Status:      string(t.Status),
 			CreatedAt:   t.CreatedAt,
+			Position:    row.Position,
 
 			Assignee: assignee,
 		})
@@ -82,10 +84,26 @@ func (r *EntRepo) CreateInProject(ctx context.Context, projectID uuid.UUID, in C
 		return TaskDTO{}, err
 	}
 
-	_, err = tx.ProjectTask.
+	maxPos := 0
+	last, err := tx.ProjectTask.
+		Query().
+		Where(projecttask.HasProjectWith(project.IDEQ(projectID))).
+		Order(ent.Desc(projecttask.FieldPosition)).
+		First(ctx)
+
+	if err != nil {
+		if !ent.IsNotFound(err) {
+			return TaskDTO{}, err
+		}
+	} else {
+		maxPos = last.Position + 1
+	}
+
+	pt, err := tx.ProjectTask.
 		Create().
 		SetProjectID(projectID).
 		SetTaskID(t.ID).
+		SetPosition(maxPos + 1).
 		Save(ctx)
 	if err != nil {
 		return TaskDTO{}, err
@@ -101,11 +119,18 @@ func (r *EntRepo) CreateInProject(ctx context.Context, projectID uuid.UUID, in C
 		Description: t.Description,
 		Status:      string(t.Status),
 		CreatedAt:   t.CreatedAt,
+		Position:    pt.Position, // если добавил поле
 	}, nil
 }
 
 func (r *EntRepo) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (TaskDTO, error) {
-	u := r.client.Task.UpdateOneID(id)
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return TaskDTO{}, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	u := tx.Task.UpdateOneID(id)
 
 	if in.Title != nil {
 		u.SetTitle(*in.Title)
@@ -129,12 +154,109 @@ func (r *EntRepo) Update(ctx context.Context, id uuid.UUID, in UpdateInput) (Tas
 		return TaskDTO{}, err
 	}
 
+	pt, err := tx.ProjectTask.
+		Query().
+		Where(projecttask.HasTaskWith(enttask.IDEQ(id))).
+		WithProject().
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return TaskDTO{}, errors.New("task not found")
+		}
+		var nse *ent.NotSingularError
+		if errors.As(err, &nse) {
+			return TaskDTO{}, errors.New("task not found")
+		}
+		return TaskDTO{}, err
+	}
+
+	if in.Position != nil {
+		target := *in.Position
+		if target < 0 {
+			target = 0
+		}
+
+		if pt.Edges.Project == nil {
+			return TaskDTO{}, errors.New("task not found")
+		}
+		projectID := pt.Edges.Project.ID
+		curPos := pt.Position
+
+		count, err := tx.ProjectTask.
+			Query().
+			Where(projecttask.HasProjectWith(project.IDEQ(projectID))).
+			Count(ctx)
+		if err != nil {
+			return TaskDTO{}, err
+		}
+		if count <= 0 {
+			target = 0
+		} else if target > count-1 {
+			target = count - 1
+		}
+
+		if target != curPos {
+			tempPos := count
+
+			_, err = tx.ProjectTask.
+				UpdateOneID(pt.ID).
+				SetPosition(tempPos).
+				Save(ctx)
+			if err != nil {
+				return TaskDTO{}, err
+			}
+
+			if target < curPos {
+				_, err = tx.ProjectTask.
+					Update().
+					Where(
+						projecttask.HasProjectWith(project.IDEQ(projectID)),
+						projecttask.PositionGTE(target),
+						projecttask.PositionLT(curPos),
+						projecttask.IDNEQ(pt.ID),
+					).
+					AddPosition(1).
+					Save(ctx)
+				if err != nil {
+					return TaskDTO{}, err
+				}
+			} else {
+				_, err = tx.ProjectTask.
+					Update().
+					Where(
+						projecttask.HasProjectWith(project.IDEQ(projectID)),
+						projecttask.PositionGT(curPos),
+						projecttask.PositionLTE(target),
+						projecttask.IDNEQ(pt.ID),
+					).
+					AddPosition(-1).
+					Save(ctx)
+				if err != nil {
+					return TaskDTO{}, err
+				}
+			}
+
+			pt, err = tx.ProjectTask.
+				UpdateOneID(pt.ID).
+				SetPosition(target).
+				Save(ctx)
+			if err != nil {
+				return TaskDTO{}, err
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return TaskDTO{}, err
+	}
+
 	return TaskDTO{
 		ID:          t.ID,
 		Title:       t.Title,
 		Description: t.Description,
 		Status:      string(t.Status),
 		CreatedAt:   t.CreatedAt,
+		Position:    pt.Position,
 	}, nil
 }
 

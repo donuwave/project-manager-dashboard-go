@@ -162,6 +162,7 @@ func (h *ProjectHandler) GetProject(w stdhttp.ResponseWriter, r *stdhttp.Request
 			Description: t.Description,
 			Status:      t.Status,
 			CreatedAt:   t.CreatedAt,
+			Position:    t.Position,
 		})
 	}
 

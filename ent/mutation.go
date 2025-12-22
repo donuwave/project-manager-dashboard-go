@@ -680,6 +680,8 @@ type ProjectTaskMutation struct {
 	op             Op
 	typ            string
 	id             *uuid.UUID
+	position       *int
+	addposition    *int
 	created_at     *time.Time
 	clearedFields  map[string]struct{}
 	project        *uuid.UUID
@@ -793,6 +795,62 @@ func (m *ProjectTaskMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetPosition sets the "position" field.
+func (m *ProjectTaskMutation) SetPosition(i int) {
+	m.position = &i
+	m.addposition = nil
+}
+
+// Position returns the value of the "position" field in the mutation.
+func (m *ProjectTaskMutation) Position() (r int, exists bool) {
+	v := m.position
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPosition returns the old "position" field's value of the ProjectTask entity.
+// If the ProjectTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProjectTaskMutation) OldPosition(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPosition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPosition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPosition: %w", err)
+	}
+	return oldValue.Position, nil
+}
+
+// AddPosition adds i to the "position" field.
+func (m *ProjectTaskMutation) AddPosition(i int) {
+	if m.addposition != nil {
+		*m.addposition += i
+	} else {
+		m.addposition = &i
+	}
+}
+
+// AddedPosition returns the value that was added to the "position" field in this mutation.
+func (m *ProjectTaskMutation) AddedPosition() (r int, exists bool) {
+	v := m.addposition
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPosition resets all changes to the "position" field.
+func (m *ProjectTaskMutation) ResetPosition() {
+	m.position = nil
+	m.addposition = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -943,7 +1001,10 @@ func (m *ProjectTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProjectTaskMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
+	if m.position != nil {
+		fields = append(fields, projecttask.FieldPosition)
+	}
 	if m.created_at != nil {
 		fields = append(fields, projecttask.FieldCreatedAt)
 	}
@@ -955,6 +1016,8 @@ func (m *ProjectTaskMutation) Fields() []string {
 // schema.
 func (m *ProjectTaskMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case projecttask.FieldPosition:
+		return m.Position()
 	case projecttask.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -966,6 +1029,8 @@ func (m *ProjectTaskMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *ProjectTaskMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case projecttask.FieldPosition:
+		return m.OldPosition(ctx)
 	case projecttask.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -977,6 +1042,13 @@ func (m *ProjectTaskMutation) OldField(ctx context.Context, name string) (ent.Va
 // type.
 func (m *ProjectTaskMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case projecttask.FieldPosition:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPosition(v)
+		return nil
 	case projecttask.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -991,13 +1063,21 @@ func (m *ProjectTaskMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *ProjectTaskMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addposition != nil {
+		fields = append(fields, projecttask.FieldPosition)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *ProjectTaskMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case projecttask.FieldPosition:
+		return m.AddedPosition()
+	}
 	return nil, false
 }
 
@@ -1006,6 +1086,13 @@ func (m *ProjectTaskMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ProjectTaskMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case projecttask.FieldPosition:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPosition(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ProjectTask numeric field %s", name)
 }
@@ -1033,6 +1120,9 @@ func (m *ProjectTaskMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *ProjectTaskMutation) ResetField(name string) error {
 	switch name {
+	case projecttask.FieldPosition:
+		m.ResetPosition()
+		return nil
 	case projecttask.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil

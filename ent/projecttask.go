@@ -20,6 +20,8 @@ type ProjectTask struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
+	// Position holds the value of the "position" field.
+	Position int `json:"position,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -68,6 +70,8 @@ func (*ProjectTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case projecttask.FieldPosition:
+			values[i] = new(sql.NullInt64)
 		case projecttask.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case projecttask.FieldID:
@@ -96,6 +100,12 @@ func (_m *ProjectTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
+			}
+		case projecttask.FieldPosition:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field position", values[i])
+			} else if value.Valid {
+				_m.Position = int(value.Int64)
 			}
 		case projecttask.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -163,6 +173,9 @@ func (_m *ProjectTask) String() string {
 	var builder strings.Builder
 	builder.WriteString("ProjectTask(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("position=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Position))
+	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')

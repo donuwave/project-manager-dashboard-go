@@ -125,6 +125,7 @@ func (h *TaskHandler) UpdateTask(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      req.Status,
+		Position:    req.Position,
 	})
 	if err != nil {
 		if errors.Is(err, errors.New("task not found")) {

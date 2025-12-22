@@ -96,6 +96,7 @@ func (r *EntRepo) GetByID(ctx context.Context, id uuid.UUID) (ProjectDTO, error)
 
 	projectTasks, err := p.QueryProjectTasks().
 		WithTask().
+		Order(ent.Asc(projecttask.FieldPosition), ent.Asc(projecttask.FieldCreatedAt)).
 		All(ctx)
 	if err != nil {
 		return ProjectDTO{}, err
@@ -113,6 +114,7 @@ func (r *EntRepo) GetByID(ctx context.Context, id uuid.UUID) (ProjectDTO, error)
 			Description: t.Description,
 			Status:      string(t.Status),
 			CreatedAt:   t.CreatedAt,
+			Position:    pt.Position,
 		})
 	}
 

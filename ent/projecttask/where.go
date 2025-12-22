@@ -56,9 +56,54 @@ func IDLTE(id uuid.UUID) predicate.ProjectTask {
 	return predicate.ProjectTask(sql.FieldLTE(FieldID, id))
 }
 
+// Position applies equality check predicate on the "position" field. It's identical to PositionEQ.
+func Position(v int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldEQ(FieldPosition, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.ProjectTask {
 	return predicate.ProjectTask(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// PositionEQ applies the EQ predicate on the "position" field.
+func PositionEQ(v int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldEQ(FieldPosition, v))
+}
+
+// PositionNEQ applies the NEQ predicate on the "position" field.
+func PositionNEQ(v int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldNEQ(FieldPosition, v))
+}
+
+// PositionIn applies the In predicate on the "position" field.
+func PositionIn(vs ...int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldIn(FieldPosition, vs...))
+}
+
+// PositionNotIn applies the NotIn predicate on the "position" field.
+func PositionNotIn(vs ...int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldNotIn(FieldPosition, vs...))
+}
+
+// PositionGT applies the GT predicate on the "position" field.
+func PositionGT(v int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldGT(FieldPosition, v))
+}
+
+// PositionGTE applies the GTE predicate on the "position" field.
+func PositionGTE(v int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldGTE(FieldPosition, v))
+}
+
+// PositionLT applies the LT predicate on the "position" field.
+func PositionLT(v int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldLT(FieldPosition, v))
+}
+
+// PositionLTE applies the LTE predicate on the "position" field.
+func PositionLTE(v int) predicate.ProjectTask {
+	return predicate.ProjectTask(sql.FieldLTE(FieldPosition, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

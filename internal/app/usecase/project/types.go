@@ -31,6 +31,7 @@ type ProjectTaskDTO struct {
 	Description string
 	Status      string
 	CreatedAt   time.Time
+	Position    int
 }
 
 type ProjectDTO struct {

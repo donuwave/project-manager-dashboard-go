@@ -30,8 +30,12 @@ func init() {
 	project.DefaultID = projectDescID.Default.(func() uuid.UUID)
 	projecttaskFields := schema.ProjectTask{}.Fields()
 	_ = projecttaskFields
+	// projecttaskDescPosition is the schema descriptor for position field.
+	projecttaskDescPosition := projecttaskFields[1].Descriptor()
+	// projecttask.DefaultPosition holds the default value on creation for the position field.
+	projecttask.DefaultPosition = projecttaskDescPosition.Default.(int)
 	// projecttaskDescCreatedAt is the schema descriptor for created_at field.
-	projecttaskDescCreatedAt := projecttaskFields[1].Descriptor()
+	projecttaskDescCreatedAt := projecttaskFields[2].Descriptor()
 	// projecttask.DefaultCreatedAt holds the default value on creation for the created_at field.
 	projecttask.DefaultCreatedAt = projecttaskDescCreatedAt.Default.(func() time.Time)
 	// projecttaskDescID is the schema descriptor for id field.

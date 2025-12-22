@@ -336,12 +336,12 @@ func (_q *ProjectTaskQuery) WithTask(opts ...func(*TaskQuery)) *ProjectTaskQuery
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"created_at,omitempty"`
+//		Position int `json:"position,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.ProjectTask.Query().
-//		GroupBy(projecttask.FieldCreatedAt).
+//		GroupBy(projecttask.FieldPosition).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *ProjectTaskQuery) GroupBy(field string, fields ...string) *ProjectTaskGroupBy {
@@ -359,11 +359,11 @@ func (_q *ProjectTaskQuery) GroupBy(field string, fields ...string) *ProjectTask
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"created_at,omitempty"`
+//		Position int `json:"position,omitempty"`
 //	}
 //
 //	client.ProjectTask.Query().
-//		Select(projecttask.FieldCreatedAt).
+//		Select(projecttask.FieldPosition).
 //		Scan(ctx, &v)
 func (_q *ProjectTaskQuery) Select(fields ...string) *ProjectTaskSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

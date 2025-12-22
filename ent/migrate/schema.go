@@ -24,6 +24,7 @@ var (
 	// ProjectTasksColumns holds the columns for the "project_tasks" table.
 	ProjectTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
+		{Name: "position", Type: field.TypeInt, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "project_project_tasks", Type: field.TypeUUID},
 		{Name: "task_project_tasks", Type: field.TypeUUID},
@@ -36,13 +37,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "project_tasks_projects_project_tasks",
-				Columns:    []*schema.Column{ProjectTasksColumns[2]},
+				Columns:    []*schema.Column{ProjectTasksColumns[3]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "project_tasks_tasks_project_tasks",
-				Columns:    []*schema.Column{ProjectTasksColumns[3]},
+				Columns:    []*schema.Column{ProjectTasksColumns[4]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -51,7 +52,12 @@ var (
 			{
 				Name:    "projecttask_project_project_tasks_task_project_tasks",
 				Unique:  true,
-				Columns: []*schema.Column{ProjectTasksColumns[2], ProjectTasksColumns[3]},
+				Columns: []*schema.Column{ProjectTasksColumns[3], ProjectTasksColumns[4]},
+			},
+			{
+				Name:    "projecttask_position_project_project_tasks",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectTasksColumns[1], ProjectTasksColumns[3]},
 			},
 		},
 	}
